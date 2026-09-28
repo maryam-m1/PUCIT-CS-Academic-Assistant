@@ -1,6 +1,3 @@
-import os
-
-# Scheme of studies - BS Computer Science (PUCIT)
 COURSES = {
     1: [
         ("MS-251", "Probability & Statistics", 3.0),
@@ -78,10 +75,9 @@ COURSES = {
 }
 
 def marks_to_grade_points(marks: int) -> float:
-    """Convert numerical marks (0-100) to PUCIT grade points."""
+    """Convert numerical marks (0-100) to corresponding grade points based on PUCIT grade bands."""
     if marks < 0 or marks > 100:
         return "Error: marks must be between 0 and 100"
-    
     if marks >= 85:
         return 4.0
     elif marks >= 80:
@@ -104,25 +100,20 @@ def marks_to_grade_points(marks: int) -> float:
         return 0.0
 
 def calculate_semester_gpa(grade_points: list[float], credit_hours: list[float]) -> float:
-    """Calculate the credit-weighted semester GPA from lists of grade points and credit hours."""
+    """Calculate the credit-weighted semester GPA given lists of grade points and corresponding credit hours."""
     if len(grade_points) != len(credit_hours):
         return "Error: lists must have the same length"
     
-    total_quality_points = 0.0
-    total_credits = 0.0
+    total_quality_points = sum(gp * ch for gp, ch in zip(grade_points, credit_hours))
+    total_credits = sum(credit_hours)
     
-    for i in range(len(grade_points)):
-        total_quality_points += grade_points[i] * credit_hours[i]
-        total_credits += credit_hours[i]
-        
     if total_credits == 0:
         return 0.0
         
-    gpa = total_quality_points / total_credits
-    return round(gpa, 2)
+    return round(total_quality_points / total_credits, 2)
 
 def calculate_new_cgpa(current_cgpa: float, completed_credit_hours: float, semester_gpa: float, semester_credit_hours: float) -> float:
-    """Calculate the new cumulative GPA after completing a new semester."""
+    """Project and calculate the new CGPA after completing a new semester with a specific semester GPA."""
     old_points = current_cgpa * completed_credit_hours
     new_points = semester_gpa * semester_credit_hours
     total_hours = completed_credit_hours + semester_credit_hours
@@ -130,52 +121,45 @@ def calculate_new_cgpa(current_cgpa: float, completed_credit_hours: float, semes
     if total_hours == 0:
         return 0.0
         
-    new_cgpa = (old_points + new_points) / total_hours
-    return round(new_cgpa, 2)
+    return round((old_points + new_points) / total_hours, 2)
 
 def required_gpa_for_target(target_cgpa: float, current_cgpa: float, completed_credit_hours: float, remaining_credit_hours: float) -> float:
-    """Calculate the required GPA needed across remaining credit hours to reach a target CGPA."""
+    """Calculate the required GPA needed over remaining credit hours to reach a target CGPA."""
     total_hours = completed_credit_hours + remaining_credit_hours
     total_required_points = target_cgpa * total_hours
     current_points = current_cgpa * completed_credit_hours
-    
     needed_points = total_required_points - current_points
     
     if remaining_credit_hours == 0:
         return 0.0
         
-    required_gpa = needed_points / remaining_credit_hours
-    return round(required_gpa, 2)
+    return round(needed_points / remaining_credit_hours, 2)
 
 def get_semester_courses(semester: int) -> str:
-    """Retrieve the list of courses, codes, and credit hours for a given semester."""
+    """Retrieve the list of courses, course codes, titles, and credit hours for a given PUCIT semester number."""
     if semester not in COURSES:
         return "Error: invalid semester number"
         
-    result_lines = []
-    for code, name, ch in COURSES[semester]:
-        result_lines.append(f"{code}: {name} ({ch} credit hours)")
-        
+    result_lines = [f"{code}: {name} ({ch} credit hours)" for code, name, ch in COURSES[semester]]
     return "\n".join(result_lines)
 
 def get_remaining_credit_hours(current_semester: int, last_semester: int = 8) -> float:
-    """Calculate remaining credit hours from the current semester up to the last semester."""
+    """Calculate total remaining credit hours from the current semester up to the final semester."""
     total_ch = 0.0
-    for sem in range(current_semester + 1, last_semester + 1):
+    for sem in range(current_semester, last_semester + 1):
         if sem in COURSES:
-            for code, name, ch in COURSES[sem]:
+            for _, _, ch in COURSES[sem]:
                 total_ch += ch
     return total_ch
 
 def save_report(filename: str, content: str) -> str:
-    """Save a report or summary to a text file."""
+    """Save the generated academic report summary to a text file and return a confirmation message."""
     if not filename.endswith(".txt"):
-        filename = filename + ".txt"
+        filename += ".txt"
         
     try:
-        file = open(filename, "w", encoding="utf-8")
-        file.write(content)
-        file.close()
+        with open(filename, "w", encoding="utf-8") as file:
+            file.write(content)
         return f"Success: Report saved to {filename}"
     except Exception as e:
         return f"Error: {str(e)}"
